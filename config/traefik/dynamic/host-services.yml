@@ -1,0 +1,58 @@
+# Routes for services running directly on the Pi host (not in Docker).
+# For Dockerized services, use Traefik labels on the container instead.
+# Rename svc-* to something meaningful (e.g. grafana, homeassistant).
+
+http:
+  routers:
+    stocks:
+      rule: "Host(`stocks.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: stocks
+
+    etf:
+      rule: "Host(`etf.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: etf
+
+    oil:
+      rule: "Host(`oil.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: oil
+
+    futures:
+      rule: "Host(`futures.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: futures
+
+  services:
+    stocks:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:9000"
+
+    etf:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:9001"
+
+    oil:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:5000"
+
+    futures:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:7000"

@@ -1,0 +1,62 @@
+theme: dark
+
+server:
+  host: 0.0.0.0
+  port: 9091
+
+log:
+  level: info
+
+default_redirection_url: https://stocks.coma.henriksen.es
+
+authentication_backend:
+  ldap:
+    implementation: lldap
+    url: ldap://lldap:3890
+    timeout: 5s
+    start_tls: false
+    base_dn: dc=coma,dc=henriksen,dc=es
+    additional_users_dn: ou=people
+    users_filter: (&({username_attribute}={input})(objectClass=person))
+    additional_groups_dn: ou=groups
+    groups_filter: (member={dn})
+    group_name_attribute: cn
+    mail_attribute: mail
+    display_name_attribute: displayName
+    user: uid=admin,ou=people,dc=coma,dc=henriksen,dc=es
+    # password injected via AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD env var
+
+session:
+  name: authelia_session
+  # secret injected via AUTHELIA_SESSION_SECRET env var
+  expiration: 1h
+  inactivity: 5m
+  remember_me_duration: 1M
+  domain: coma.henriksen.es
+  redis:
+    host: redis
+    port: 6379
+
+regulation:
+  max_retries: 3
+  find_time: 2m
+  ban_time: 5m
+
+storage:
+  # encryption_key injected via AUTHELIA_STORAGE_ENCRYPTION_KEY env var
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  filesystem:
+    filename: /config/notifications.txt
+
+access_control:
+  default_policy: deny
+  rules:
+    # Auth portal itself: no auth required
+    - domain: auth.coma.henriksen.es
+      policy: bypass
+    # Everything else: require login
+    - domain: "*.coma.henriksen.es"
+      policy: one_factor

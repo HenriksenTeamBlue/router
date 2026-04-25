@@ -1,0 +1,5 @@
+.env
+data/
+config/authelia/db.sqlite3
+config/authelia/notifications.txt
+mempalace.yaml
