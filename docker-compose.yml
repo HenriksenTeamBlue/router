@@ -28,7 +28,7 @@ services:
       - "traefik.http.routers.traefik-dashboard.middlewares=authelia@file"
 
   authelia:
-    image: authelia/authelia:latest
+    image: authelia/authelia:4.39.19
     container_name: authelia
     restart: unless-stopped
     volumes:
