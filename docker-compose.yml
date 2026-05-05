@@ -15,6 +15,7 @@ services:
       - ./config/traefik/traefik.yml:/traefik.yml:ro
       - ./config/traefik/dynamic:/dynamic:ro
       - ./data/acme.json:/acme.json
+      - ./data/traefik/logs:/var/log/traefik
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -75,3 +76,136 @@ services:
       - "traefik.http.routers.lldap.tls.certresolver=letsencrypt"
       - "traefik.http.routers.lldap.middlewares=authelia@file"
       - "traefik.http.services.lldap.loadbalancer.server.port=17170"
+
+  dashdot:
+    image: mauricenino/dashdot:latest
+    container_name: dashdot
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - proxy
+    volumes:
+      - /:/mnt/host:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashdot.rule=Host(`dash.coma.henriksen.es`)"
+      - "traefik.http.routers.dashdot.entrypoints=websecure"
+      - "traefik.http.routers.dashdot.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashdot.middlewares=authelia@file"
+      - "traefik.http.services.dashdot.loadbalancer.server.port=3001"
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ./data/uptime-kuma:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kuma.rule=Host(`kuma.coma.henriksen.es`)"
+      - "traefik.http.routers.kuma.entrypoints=websecure"
+      - "traefik.http.routers.kuma.tls.certresolver=letsencrypt"
+      - "traefik.http.services.kuma.loadbalancer.server.port=3001"
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ./data/crowdsec/config:/etc/crowdsec
+      - ./data/crowdsec/db:/var/lib/crowdsec/data
+      - ./data/traefik/logs:/var/log/traefik:ro
+      - ./config/crowdsec/acquis.yml:/etc/crowdsec/acquis.yaml:ro
+    environment:
+      - COLLECTIONS=crowdsecurity/traefik crowdsecurity/http-cve
+
+  crowdsec-bouncer:
+    image: fbonalair/traefik-crowdsec-bouncer:latest
+    container_name: crowdsec-bouncer
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - CROWDSEC_BOUNCER_API_KEY=${CROWDSEC_BOUNCER_KEY}
+      - CROWDSEC_AGENT_HOST=crowdsec:8080
+      - GIN_MODE=release
+    depends_on:
+      - crowdsec
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./data/prometheus:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.coma.henriksen.es`)"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.prometheus.middlewares=authelia@file"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    networks:
+      - proxy
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    networks:
+      - proxy
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SERVER_ROOT_URL=https://grafana.coma.henriksen.es
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.coma.henriksen.es`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.grafana.middlewares=authelia@file"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"

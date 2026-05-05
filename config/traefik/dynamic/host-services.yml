@@ -36,6 +36,22 @@ http:
       middlewares: [authelia]
       service: futures
 
+    options:
+      rule: "Host(`options.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: options
+
+    deep:
+      rule: "Host(`deep.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: deep
+
   services:
     stocks:
       loadBalancer:
@@ -56,3 +72,13 @@ http:
       loadBalancer:
         servers:
           - url: "http://host.docker.internal:7000"
+
+    options:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:9003"
+
+    deep:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:9005"

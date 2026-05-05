@@ -9,3 +9,14 @@ http:
           - "Remote-Groups"
           - "Remote-Name"
           - "Remote-Email"
+
+    crowdsec:
+      forwardAuth:
+        address: "http://crowdsec-bouncer:8080/api/v1/forwardAuth"
+        trustForwardHeader: true
+
+    secure:
+      chain:
+        middlewares:
+          - crowdsec
+          - authelia
