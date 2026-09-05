@@ -11,7 +11,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/user/1000/docker.sock:/var/run/docker.sock:ro
       - ./config/traefik/traefik.yml:/traefik.yml:ro
       - ./config/traefik/dynamic:/dynamic:ro
       - ./data/acme.json:/acme.json
@@ -148,7 +148,8 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=30d
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=512MB
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.coma.henriksen.es`)"

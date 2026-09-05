@@ -52,33 +52,86 @@ http:
       middlewares: [authelia]
       service: deep
 
+    shop:
+      rule: "Host(`shop.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: shop
+
+    astro:
+      rule: "Host(`astro.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: astro
+
+    conference:
+      rule: "Host(`conference.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: conference
+
+    retro:
+      rule: "Host(`retro.coma.henriksen.es`)"
+      entryPoints: [websecure]
+      tls:
+        certResolver: letsencrypt
+      middlewares: [authelia]
+      service: retro
+
   services:
     stocks:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:9000"
+          - url: "http://192.168.1.140:9000"
 
     etf:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:9001"
+          - url: "http://192.168.1.140:9001"
 
     oil:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:5000"
+          - url: "http://192.168.1.140:5000"
 
     futures:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:7000"
+          - url: "http://192.168.1.140:7000"
 
     options:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:9003"
+          - url: "http://192.168.1.140:9003"
 
     deep:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:9005"
+          - url: "http://192.168.1.140:9005"
+
+    shop:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.140:9007"
+
+    astro:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.140:8000"
+
+    conference:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.140:9008"
+
+    retro:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.140:8877"
+
